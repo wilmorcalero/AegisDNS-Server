@@ -147,6 +147,7 @@ export const SETTINGS_URLS = {
     dns: '/dns',
     settings: '/settings',
     clients: '/clients',
+    blockpage: '/blockpage',
 };
 
 export const FILTERS_URLS = {
