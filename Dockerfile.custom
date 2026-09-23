@@ -1,0 +1,35 @@
+# Etapa 1: Compilar el Frontend modificado (React)
+FROM node:20-alpine AS frontend-builder
+WORKDIR /src
+COPY .twosky.json ./
+WORKDIR /src/client
+COPY client/package*.json ./
+RUN npm install
+COPY client/ ./
+# Webpack genera los archivos directamente en /src/build
+RUN npm run build-prod
+
+# Etapa 2: Compilar el Backend en Go con el Frontend embebido
+FROM golang:alpine AS backend-builder
+ENV GOTOOLCHAIN=auto
+RUN apk add --no-cache git make
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+# Copiamos la carpeta build generada por Webpack en /src/build
+COPY --from=frontend-builder /src/build ./build
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /bin/AdGuardHome ./main.go
+
+# Etapa 3: Imagen final limpia y ligera
+FROM alpine:3.21
+RUN apk --no-cache add ca-certificates tzdata libcap && \
+    mkdir -p /opt/adguardhome/conf /opt/adguardhome/work
+COPY --from=backend-builder /bin/AdGuardHome /opt/adguardhome/AdGuardHome
+RUN chmod +x /opt/adguardhome/AdGuardHome
+
+EXPOSE 53/tcp 53/udp 67/udp 68/udp 80/tcp 443/tcp 3000/tcp 3053/tcp
+
+WORKDIR /opt/adguardhome/work
+ENTRYPOINT ["/opt/adguardhome/AdGuardHome"]
+CMD ["-c", "/opt/adguardhome/conf/AdGuardHome.yaml", "-w", "/opt/adguardhome/work"]
