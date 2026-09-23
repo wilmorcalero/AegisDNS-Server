@@ -57,6 +57,10 @@ const SETTINGS_ITEMS = [
         route: SETTINGS_URLS.dhcp,
         text: 'dhcp_settings',
     },
+    {
+        route: SETTINGS_URLS.blockpage,
+        text: 'Pantalla de Bloqueo',
+    },
 ];
 
 const FILTERS_ITEMS = [
