@@ -43,7 +43,6 @@ import DnsRewrites from '../../containers/DnsRewrites';
 import CustomRules from '../../containers/CustomRules';
 
 import Services from '../Filters/Services';
-import BlockPageEditor from '../Settings/BlockPage';
 
 import Logs from '../Logs';
 import ProtectionTimer from '../ProtectionTimer';
