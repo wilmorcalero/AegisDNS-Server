@@ -1,9 +1,6 @@
-import React, { useMemo } from 'react';
-
+import React, { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-
 import { Controller, useForm } from 'react-hook-form';
-
 import { ServiceField } from './ServiceField';
 
 export type BlockedService = {
@@ -15,7 +12,7 @@ export type BlockedService = {
 
 export type ServiceGroups = {
     id: string;
-}
+};
 
 type FormValues = {
     blocked_services: Record<string, boolean>;
@@ -39,6 +36,7 @@ export const Form = ({
     onSubmit,
 }: FormProps) => {
     const { t } = useTranslation();
+    const [searchFilter, setSearchFilter] = useState('');
 
     const {
         handleSubmit,
@@ -53,18 +51,30 @@ export const Form = ({
     const isServicesControlsDisabled = processing || processingSet;
     const isSubmitDisabled = processing || processingSet || isSubmitting;
 
+    // Filtra los servicios según lo que escribas en la búsqueda
+    const filteredServices = useMemo(() => {
+        if (!searchFilter.trim()) {
+            return blockedServices;
+        }
+        const query = searchFilter.toLowerCase().trim();
+        return blockedServices.filter((service) =>
+            service.name.toLowerCase().includes(query) ||
+            service.id.toLowerCase().includes(query)
+        );
+    }, [blockedServices, searchFilter]);
+
     const servicesByGroup = useMemo(() => {
-        return blockedServices.reduce((acc, service) => {
+        return filteredServices.reduce((acc, service) => {
             if (!acc[service.group_id]) {
                 acc[service.group_id] = [];
             }
             acc[service.group_id].push(service);
             return acc;
         }, {} as Record<string, BlockedService[]>);
-    }, [blockedServices]);
+    }, [filteredServices]);
 
     const handleToggleAllServices = (isSelected: boolean) => {
-        blockedServices.forEach((service) => {
+        filteredServices.forEach((service) => {
             if (!isServicesControlsDisabled) {
                 setValue(`blocked_services.${service.id}`, isSelected);
             }
@@ -75,7 +85,7 @@ export const Form = ({
         if (isServicesControlsDisabled) {
             return;
         }
-        servicesByGroup[groupId].forEach((service) => {
+        (servicesByGroup[groupId] || []).forEach((service) => {
             setValue(`blocked_services.${service.id}`, isSelected);
         });
     };
@@ -97,6 +107,34 @@ export const Form = ({
     return (
         <form onSubmit={handleSubmit(handleSubmitWithGroups)}>
             <div className="form__group">
+                {/* BARRA DE BÚSQUEDA PERSONALIZADA */}
+                <div className="mb-4">
+                    <div className="input-icon">
+                        <span className="input-icon-addon">
+                            🔍
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control form-control-lg"
+                            placeholder="Buscar aplicación o juego (ej. TikTok, Roblox, Steam, YouTube, Discord)..."
+                            value={searchFilter}
+                            onChange={(e) => setSearchFilter(e.target.value)}
+                        />
+                    </div>
+                    {searchFilter && (
+                        <div className="mt-2 text-muted small d-flex justify-content-between align-items-center">
+                            <span>Mostrando resultados para: <strong>"{searchFilter}"</strong></span>
+                            <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0 text-primary"
+                                onClick={() => setSearchFilter('')}
+                            >
+                                Limpiar búsqueda
+                            </button>
+                        </div>
+                    )}
+                </div>
+
                 <div className="blocked_services row mb-5">
                     <div className="col-12 col-md-6 mb-4 mb-md-0">
                         <button
@@ -121,14 +159,16 @@ export const Form = ({
                 </div>
 
                 {serviceGroups.map((group) => {
-                    const groupServices = servicesByGroup[group.id];
+                    const groupServices = servicesByGroup[group.id] || [];
+                    if (groupServices.length === 0) {
+                        return null;
+                    }
 
                     return (
                         <div key={group.id} className="services-group mb-2">
                             <h3 className="h5 mb-3">
                                 {t(`servicesgroup.${group.id}.name`, { ns: 'services' })}
                             </h3>
-
                             {groupServices.length > 1 && (
                                 <div className="actions mb-3 d-flex gap-4">
                                     <button
@@ -139,7 +179,6 @@ export const Form = ({
                                     >
                                         <Trans>block_all</Trans>
                                     </button>
-
                                     <button
                                         type="button"
                                         className="btn btn-link p-0 text-success font-weight-normal"
@@ -150,7 +189,6 @@ export const Form = ({
                                     </button>
                                 </div>
                             )}
-
                             <div className="services__wrapper">
                                 <div className="services">
                                     {groupServices.map((service) => (
