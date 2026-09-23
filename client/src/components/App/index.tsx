@@ -36,6 +36,7 @@ import Encryption from '../../containers/Encryption';
 
 import Dhcp from '../Settings/Dhcp';
 import Clients from '../../containers/Clients';
+import BlockPageEditor from '../Settings/BlockPage';
 import DnsBlocklist from '../../containers/DnsBlocklist';
 import DnsAllowlist from '../../containers/DnsAllowlist';
 import DnsRewrites from '../../containers/DnsRewrites';
@@ -81,6 +82,10 @@ const ROUTES = [
     {
         path: SETTINGS_URLS.clients,
         component: Clients,
+    },
+    {
+        path: SETTINGS_URLS.blockpage,
+        component: BlockPageEditor,
     },
     {
         path: FILTERS_URLS.dns_blocklists,
